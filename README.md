@@ -10,7 +10,7 @@ This project demonstrates Infrastructure as Code using Ansible and Jenkins CI/CD
 - **GitHub Integration**
 
 ### Test Details
-- **Test Timestamp**: $(date +"%Y-%m-%d %H:%M:%S")
+- **Test Timestamp**:
 - **Build Trigger**: GitHub Webhook
 - **Artifact Archiving**: Enabled
 - **Expected Result**: Jenkins should archive all files
