@@ -1,30 +1,23 @@
 ---
-- name: Common server setup
-  hosts: all
+- name: update web, nfs and db servers
+  hosts: webservers, nfs, db
   become: yes
   tasks:
-    - name: Update package cache
-      apt:
+    - name: ensure wireshark is at the latest version
+      yum:
+        name: wireshark
+        state: latest
+   
+
+- name: update LB server
+  hosts: lb
+  become: yes
+  tasks:
+    - name: Update apt repo
+      apt: 
         update_cache: yes
-      when: ansible_os_family == "Debian"
 
-    - name: Install common packages
-      package:
-        name:
-          - curl
-          - wget
-          - vim
-          - htop
-        state: present
-
-    - name: Ensure NTP is installed and running
-      package:
-        name: ntp
-        state: present
-      notify: restart ntp
-
-  handlers:
-    - name: restart ntp
-      service:
-        name: ntp
-        state: restarted
+    - name: ensure wireshark is at the latest version
+      apt:
+        name: wireshark
+        state: latest
