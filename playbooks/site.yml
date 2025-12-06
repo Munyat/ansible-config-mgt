@@ -1,3 +1,6 @@
 ---
-- hosts: all
+# Import common playbook for all servers
 - import_playbook: ../static-assignments/common-del.yml
+
+# Import UAT webservers configuration
+- import_playbook: ../static-assignments/uat-webservers.yml
