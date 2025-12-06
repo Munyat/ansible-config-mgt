@@ -1,4 +1,4 @@
-# Ansible Config Management
+# Ansible Configaration Management
 
 ## Infrastructure as Code
 This project demonstrates Infrastructure as Code using Ansible and Jenkins CI/CD.
