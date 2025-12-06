@@ -9,12 +9,6 @@ This project demonstrates Infrastructure as Code using Ansible and Jenkins CI/CD
 - **Jenkins Pipeline**
 - **GitHub Integration**
 
-### Test Details
-- **Test Timestamp**:
-- **Build Trigger**: GitHub Webhook
-- **Artifact Archiving**: Enabled
-- **Expected Result**: Jenkins should archive all files
-
 ### Next Steps
 1. Verify build triggered automatically
 2. Check artifacts in Jenkins workspace
