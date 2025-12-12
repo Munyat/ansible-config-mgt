@@ -1,0 +1,57 @@
+---
+# tasks file for webserver
+
+- name: Install Apache
+  become: true
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+    update_cache: yes
+
+- name: Install Git
+  become: true
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Remove existing /var/www/html
+  become: true
+  ansible.builtin.file:
+    path: /var/www/html
+    state: absent
+
+- name: Clone tooling website repository
+  become: true
+  ansible.builtin.git:
+    repo: https://github.com/Munyat/tooling.git
+    dest: /var/www/html
+    force: yes
+
+- name: Copy HTML content one level up
+  become: true
+  ansible.builtin.shell:
+    cmd: cp -rf /var/www/html/html/* /var/www/html/ 2>/dev/null || true
+    creates: /var/www/html/index.html
+
+- name: Remove html subdirectory
+  become: true
+  ansible.builtin.file:
+    path: /var/www/html/html
+    state: absent
+
+- name: Ensure correct permissions
+  become: true
+  ansible.builtin.file:
+    path: /var/www/html
+    state: directory
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: Start and enable Apache service
+  become: true
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: yes
+
