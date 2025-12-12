@@ -3,6 +3,10 @@ enable_nginx_lb: true
 enable_apache_lb: false
 load_balancer_is_required: true
 
+# Database Configuration (optional)
+mysql_root_password: "SecureRootPass123!"
+mysql_web_user_password: "NewStrongPassword123!"
+
 # For Apache load balancer (alternative):
 # enable_nginx_lb: false
 # enable_apache_lb: true

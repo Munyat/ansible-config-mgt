@@ -1,0 +1,5 @@
+- hosts: webservers
+  tasks:
+    - name: Configure webservers
+      debug:
+        msg: "Webserver configuration for tooling website"

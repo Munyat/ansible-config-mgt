@@ -149,7 +149,7 @@ mysql_replication_user: []
 mysql_hide_passwords: false
 
 
-enable_nginx_lb: false
-enable_apache_lb: false
-load_balancer_is_required: false
+# enable_nginx_lb: false
+# enable_apache_lb: false
+# load_balancer_is_required: false
 
