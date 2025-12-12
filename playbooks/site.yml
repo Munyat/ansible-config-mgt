@@ -1,29 +1,21 @@
-# ---
-# Import common playbook for all servers
-# - import_playbook: ../static-assignments/common-del.yml
-# - import_playbook: ../static-assignments/uat-webservers.yml
+---
+# 1. Import common playbooks
+- import_playbook: ../static-assignments/common-del.yml
+- import_playbook: ../static-assignments/uat-webservers.yml
 
 ---
-# 1. Apply dynamic variables to all hosts
-- name: Include dynamic variables
-  hosts: all
+# 2. Include dynamic variables for all hosts
+- hosts: all
+  name: Include dynamic variables
   tags:
     - always
   tasks:
     - include_tasks: ../dynamic-assignments/env-vars.yml
-    # - import_tasks: ../static-assignments/common.yml
 
-
-# 2. Webserver assignment
-- name: Webserver assignment
-  hosts: webservers
-  tasks:
-    - import_tasks: ../static-assignments/uat-webservers.yml
-
-
+---
 # 3. Loadbalancers assignment
-- name: Loadbalancers assignment
-  hosts: lb
+- hosts: lb
+  name: Loadbalancers assignment
   when: load_balancer_is_required
   tasks:
     - import_tasks: ../static-assignments/loadbalancers.yml
