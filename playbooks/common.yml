@@ -1,23 +1,26 @@
 ---
-- name: update web, nfs and db servers
+# Play 1: Update Web, NFS, and DB Servers (RHEL/CentOS)
+- name: Update Web, NFS, and DB servers
   hosts: webservers, nfs, db
   become: yes
   tasks:
-    - name: ensure wireshark is at the latest version
+    - name: Ensure wireshark is at the latest version
       yum:
         name: wireshark
         state: latest
-   
 
-- name: update LB server
+
+# Play 2: Update Load Balancer (Ubuntu/Debian)
+- name: Update Load Balancer server
   hosts: lb
   become: yes
   tasks:
-    - name: Update apt repo
-      apt: 
+    - name: Update apt repository cache
+      apt:
         update_cache: yes
+        cache_valid_time: 3600
 
-    - name: ensure wireshark is at the latest version
+    - name: Ensure wireshark is at the latest version
       apt:
         name: wireshark
         state: latest

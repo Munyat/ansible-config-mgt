@@ -8,7 +8,7 @@ mysql_user_password: root
 # The default root user installed by mysql - almost always root
 mysql_root_home: /root
 mysql_root_username: root
-mysql_root_password: root
+mysql_root_password: "SecureRootPass123!"
 
 # Set this to `true` to forcibly update the root password.
 mysql_root_password_update: false
@@ -119,19 +119,18 @@ mysql_config_include_files: []
 #  - src: path/relative/to/playbook/file.cnf
 #  - { src: path/relative/to/playbook/anotherfile.cnf, force: true }
 
-# Databases.
-mysql_databases: []
-#   - name: example
-#     collation: utf8_general_ci
-#     encoding: utf8
-#     replicate: 1
+mysql_databases:
+  - name: tooling
+    encoding: utf8
+    collation: utf8_general_ci
+    state: present
 
-# Users.
-mysql_users: []
-#   - name: example
-#     host: 127.0.0.1
-#     password: secret
-#     priv: *.*:USAGE
+mysql_users:
+  - name: webaccess
+    host: "%"
+    password: "NewStrongPassword123!"
+    priv: "tooling.*:ALL"
+    state: present
 
 mysql_disable_log_bin: false
 
@@ -148,3 +147,9 @@ mysql_replication_master_inventory_host: "{{ mysql_replication_master }}"
 mysql_replication_user: []
 
 mysql_hide_passwords: false
+
+
+enable_nginx_lb: false
+enable_apache_lb: false
+load_balancer_is_required: false
+

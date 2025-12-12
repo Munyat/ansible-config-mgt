@@ -1,4 +1,4 @@
-# For Nginx load balancer
+# Load Balancer Configuration
 enable_nginx_lb: true
 enable_apache_lb: false
 load_balancer_is_required: true
@@ -7,3 +7,7 @@ load_balancer_is_required: true
 # enable_nginx_lb: false
 # enable_apache_lb: true
 # load_balancer_is_required: true
+---
+# UAT Environment Variables
+server_name: uat-tooling-website
+domain: uat.tooling.example.com
