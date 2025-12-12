@@ -1,26 +1,24 @@
 ---
-# Play 1: Update Web, NFS, and DB Servers (RHEL/CentOS)
-- name: Update Web, NFS, and DB servers
-  hosts: webservers, nfs, db
-  become: yes
+# Import common playbook for all servers
+- import_playbook: ../static-assignments/common.yml
+
+# Import UAT webservers configuration
+- import_playbook: ../static-assignments/uat-webservers.yml
+
+# Dynamic variables always loaded
+- hosts: all
+  name: Include dynamic variables
   tasks:
-    - name: Ensure wireshark is at the latest version
-      yum:
-        name: wireshark
-        state: latest
+    - include_tasks: ../dynamic-assignments/env-vars.yml
+  tags:
+    - always
 
+# Webserver assignment
+- import_playbook: ../static-assignments/webservers.yml
 
-# Play 2: Update Load Balancer (Ubuntu/Debian)
-- name: Update Load Balancer server
-  hosts: lb
-  become: yes
+# Load balancers
+- hosts: lb
+  name: Loadbalancers assignment
   tasks:
-    - name: Update apt repository cache
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Ensure wireshark is at the latest version
-      apt:
-        name: wireshark
-        state: latest
+    - import_tasks: ../static-assignments/loadbalancers.yml
+  when: load_balancer_is_required
