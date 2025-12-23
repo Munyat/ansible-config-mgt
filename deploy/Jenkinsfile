@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'inventory', defaultValue: 'dev', description: 'Environment to deploy to')
+        string(name: 'tags', defaultValue: '', description: 'Ansible tags to run')
+    }
+
     environment {
         ANSIBLE_CONFIG = "${WORKSPACE}/deploy/.ansible.cfg"
     }
@@ -16,7 +21,7 @@ pipeline {
 
         stage('Checkout SCM') {
             steps {
-                git branch: 'main', url: 'https://github.com/Munyat/ansible-config.git'
+                git branch: 'main', url: 'https://github.com/Munyat/ansible-config-mgt.git'
             }
         }
 
@@ -24,11 +29,12 @@ pipeline {
             steps {
                 ansiblePlaybook(
                     colorized: true,
-                    credentialsId: 'private-key',
+                    credentialsId: 'github-personal-token',
                     disableHostKeyChecking: true,
                     installation: 'ansible',
-                    inventory: 'inventory/dev',
-                    playbook: 'playbooks/site.yml'
+                    inventory: "inventory/${params.inventory}",
+                    playbook: 'playbooks/site.yml',
+                    tags: "${params.tags}"
                 )
             }
         }
