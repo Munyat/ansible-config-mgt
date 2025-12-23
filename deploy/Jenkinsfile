@@ -1,215 +1,36 @@
 pipeline {
     agent any
 
-    parameters {
-        string(
-            name: 'INVENTORY',
-            defaultValue: 'dev',
-            description: 'Inventory file (dev, sit, uat, pentest, prod)'
-        )
-        string(
-            name: 'ANSIBLE_TAGS',
-            defaultValue: 'all',
-            description: 'Ansible tags (webserver, nginx, mysql, all)'
-        )
-        choice(
-            name: 'PLAYBOOK',
-            choices: ['site.yml', 'common.yml', 'custom.yml'],
-            description: 'Playbook to execute'
-        )
-    }
-
     environment {
-        // CRITICAL: Export ANSIBLE_CONFIG to point to our relocated config
-        ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible.cfg"
-        
-        // Fix Jenkins workspace paths
-        ANSIBLE_ROLES_PATH = "${WORKSPACE}/roles"
-        ANSIBLE_INVENTORY = "${WORKSPACE}/inventory"
-        
-        // GitHub branch fix
-        GIT_BRANCH = 'main'
+        ANSIBLE_CONFIG = "${WORKSPACE}/deploy/.ansible.cfg"
     }
 
     stages {
-        stage('Clean & Prepare') {
+        stage('Initial Cleanup') {
             steps {
-                cleanWs()
-                echo "Workspace: ${WORKSPACE}"
-                sh 'pwd && ls -la'
-            }
-        }
-
-        stage('Checkout Code') {
-            steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "*/${env.GIT_BRANCH}"]],
-                    extensions: [],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/YOUR-USERNAME/ansible-config-artifact.git',
-                        credentialsId: 'github-credentials'
-                    ]]
-                ])
-                
-                // Verify structure
-                sh '''
-                    echo "=== Repository Structure ==="
-                    pwd
-                    ls -la
-                    echo ""
-                    echo "=== Checking Critical Paths ==="
-                    ls -la deploy/
-                    ls -la inventory/
-                    ls -la roles/
-                    ls -la playbooks/
-                '''
-            }
-        }
-
-        stage('Fix Ansible Configuration') {
-            steps {
-                script {
-                    // Update ansible.cfg with absolute paths
-                    sh """
-                        echo "=== Updating ansible.cfg paths ==="
-                        echo "Original config:"
-                        cat deploy/ansible.cfg
-                        echo ""
-                        
-                        # Create backup
-                        cp deploy/ansible.cfg deploy/ansible.cfg.backup
-                        
-                        # Update paths in ansible.cfg
-                        sed -i "s|roles_path = ../roles|roles_path = ${WORKSPACE}/roles|g" deploy/ansible.cfg
-                        sed -i "s|inventory = ../inventory|inventory = ${WORKSPACE}/inventory|g" deploy/ansible.cfg
-                        
-                        echo "Updated config:"
-                        cat deploy/ansible.cfg
-                        
-                        # Verify paths exist
-                        echo ""
-                        echo "=== Path Verification ==="
-                        echo "Roles path exists: \$(ls -d ${WORKSPACE}/roles 2>/dev/null && echo '✅' || echo '❌')"
-                        echo "Inventory exists: \$(ls ${WORKSPACE}/inventory/*.ini 2>/dev/null | wc -l) inventory files"
-                    """
+                dir("${WORKSPACE}") {
+                    deleteDir()
                 }
             }
         }
 
-        stage('Validate Environment') {
+        stage('Checkout SCM') {
             steps {
-                script {
-                    sh """
-                        echo "=== Environment Validation ==="
-                        echo "ANSIBLE_CONFIG: \${ANSIBLE_CONFIG}"
-                        echo "Workspace: ${WORKSPACE}"
-                        echo ""
-                        
-                        # Test Ansible configuration
-                        export ANSIBLE_CONFIG="${WORKSPACE}/deploy/ansible.cfg"
-                        
-                        echo "=== Ansible Config Test ==="
-                        ansible-config dump | grep -E "(DEFAULT_ROLES_PATH|DEFAULT_HOST_LIST)" || true
-                        
-                        echo ""
-                        echo "=== Inventory Check ==="
-                        INVENTORY_FILE="inventory/\${INVENTORY}.ini"
-                        if [ -f "\${INVENTORY_FILE}" ]; then
-                            echo "✅ Found: \${INVENTORY_FILE}"
-                            echo "Hosts in inventory:"
-                            ansible-inventory -i "\${INVENTORY_FILE}" --list | jq -r '.all.hosts[]' 2>/dev/null || \
-                            grep -E "^\[.*\]" "\${INVENTORY_FILE}" | sed 's/[][]//g'
-                        else
-                            echo "❌ Missing: \${INVENTORY_FILE}"
-                            echo "Available inventories:"
-                            ls inventory/*.ini | xargs -n1 basename
-                            exit 1
-                        fi
-                    """
-                }
+                git branch: 'main', url: 'https://github.com/YOUR-USERNAME/ansible-config.git'
             }
         }
 
-        stage('Execute Ansible') {
+        stage('Run Ansible Playbook') {
             steps {
-                script {
-                    // Determine full playbook path
-                    def playbookPath = "playbooks/${params.PLAYBOOK}"
-                    
-                    sh """
-                        echo "=== Ansible Execution ==="
-                        echo "Playbook: ${playbookPath}"
-                        echo "Inventory: \${INVENTORY}.ini"
-                        echo "Tags: ${params.ANSIBLE_TAGS}"
-                        echo ""
-                        
-                        # Export the configuration
-                        export ANSIBLE_CONFIG="${WORKSPACE}/deploy/ansible.cfg"
-                        export ANSIBLE_ROLES_PATH="${WORKSPACE}/roles"
-                        
-                        echo "=== Current Directory ==="
-                        pwd
-                        
-                        echo "=== Running Ansible ==="
-                        ansible-playbook \
-                            -i inventory/\${INVENTORY}.ini \
-                            ${playbookPath} \
-                            --tags "${params.ANSIBLE_TAGS}" \
-                            -v \
-                            --extra-vars "workspace_path=${WORKSPACE}"
-                        
-                        echo ""
-                        echo "✅ Ansible completed!"
-                    """
-                }
+                ansiblePlaybook(
+                    colorized: true,
+                    credentialsId: 'private-key',
+                    disableHostKeyChecking: true,
+                    installation: 'ansible',
+                    inventory: 'inventory/dev',
+                    playbook: 'playbooks/site.yml'
+                )
             }
-        }
-
-        stage('Verify & Report') {
-            steps {
-                sh """
-                    echo "=== Deployment Summary ==="
-                    echo "Environment: \${INVENTORY}"
-                    echo "Playbook: ${params.PLAYBOOK}"
-                    echo "Tags: ${params.ANSIBLE_TAGS}"
-                    echo "Status: \${currentBuild.currentResult}"
-                    echo ""
-                    echo "Check deployed services:"
-                    echo "- TODO App: https://todo.\${INVENTORY}.steghub.com"
-                    echo "- Tooling: https://tooling.\${INVENTORY}.steghub.com"
-                """
-            }
-        }
-    }
-
-    post {
-        always {
-            // Save logs and configs
-            archiveArtifacts artifacts: 'deploy/ansible.cfg, deploy/ansible.cfg.backup', allowEmptyArchive: true
-            archiveArtifacts artifacts: '**/ansible.log', allowEmptyArchive: true
-            
-            sh '''
-                echo "=== Workspace Cleanup Info ==="
-                echo "Workspace size:"
-                du -sh ${WORKSPACE} || true
-            '''
-        }
-        success {
-            echo "✅ SUCCESS: Deployed to ${params.INVENTORY} using ${params.PLAYBOOK}"
-        }
-        failure {
-            echo "❌ FAILURE: Check logs above"
-            
-            // Help debug path issues
-            sh '''
-                echo "=== Debug: Path Issues ==="
-                echo "WORKSPACE: ${WORKSPACE}"
-                echo "ANSIBLE_CONFIG: ${ANSIBLE_CONFIG}"
-                ls -la ${WORKSPACE}/deploy/
-                echo "ansible.cfg content:"
-                cat ${WORKSPACE}/deploy/ansible.cfg || echo "Cannot read config"
-            '''
         }
     }
 }
