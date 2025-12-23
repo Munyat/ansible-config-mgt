@@ -1,21 +1,59 @@
 pipeline {
-  agent any
-
-  stages {
-    stage('Build') {
-      steps {
-        script {
-          sh 'echo "Building Stage"'
+    agent any
+    
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    sh 'echo "Building Stage"'
+                }
+            }
         }
-      }
-    }
-
-    stage('Test') {
-      steps {
-        script {
-          sh 'echo "Testing Stage"'
+        
+        stage('Test') {
+            steps {
+                script {
+                    sh 'echo "Testing Stage"'
+                   
+                }
+            }
         }
-      }
+        
+        stage('Package') {
+            steps {
+                script {
+                    sh 'echo "Packaging Stage"'                   
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    sh 'echo "Deploying Stage"'                  
+                }
+            }
+        }
+        
+        stage('Clean Up') {
+            steps {
+                script {
+                    sh 'echo "Clean Up Stage"'
+                }
+            }
+        }
     }
+    
+    post {
+        always {
+            cleanWs() 
+            echo 'Pipeline completed - Check Blue Ocean for visual status'
+        }
+        success {
+            echo 'Pipeline succeeded! ✓'
+        }
+        failure {
+            echo 'Pipeline failed! ✗'
+        }
     }
 }
