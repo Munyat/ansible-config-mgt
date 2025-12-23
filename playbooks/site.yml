@@ -1,19 +1,47 @@
 ---
-# Top-level imports
-- import_playbook: ../static-assignments/common-del.yml
-- import_playbook: ../static-assignments/uat-webservers.yml
+# # Top-level imports
+# - import_playbook: ../static-assignments/common-del.yml
+# - import_playbook: ../static-assignments/uat-webservers.yml
 
-# Play 1
-- name: Apply dynamic variables
+# # Play 1
+# - name: Apply dynamic variables
+#   hosts: all
+#   tags:
+#     - always
+#   tasks:
+#     - include_tasks: ../dynamic-assignments/env-vars.yml
+
+# # Play 2
+# - name: Loadbalancers assignment
+#   hosts: lb
+#   tasks:
+#     - name: Include LB tasks
+#       include_tasks: ../static-assignments/loadbalancers.yaml
+- name: Deploy infrastructure to ${INVENTORY}
   hosts: all
-  tags:
-    - always
-  tasks:
-    - include_tasks: ../dynamic-assignments/env-vars.yml
+  become: yes
+  gather_facts: yes
 
-# Play 2
-- name: Loadbalancers assignment
-  hosts: lb
-  tasks:
-    - name: Include LB tasks
-      include_tasks: ../static-assignments/loadbalancers.yaml
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+  roles:
+    - role: nginx
+      when: "'nginx' in group_names"
+      tags: nginx
+
+    - role: tooling
+      when: "'tooling' in group_names"
+      tags: tooling
+
+    - role: todo
+      when: "'todo' in group_names"
+      tags: todo
+
+    - role: db
+      when: "'db' in group_names"
+      tags: db
