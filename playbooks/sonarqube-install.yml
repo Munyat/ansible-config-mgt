@@ -3,14 +3,12 @@
   become: yes
   
   pre_tasks:
-    # FIRST: Update apt cache before installing anything
     - name: Update apt cache
       apt:
         update_cache: yes
         cache_valid_time: 3600
       tags: always
     
-    # NOW install PostgreSQL (without specific version)
     - name: Install PostgreSQL
       apt:
         name:
@@ -19,23 +17,43 @@
         state: present
       tags: postgresql
     
-    - name: Start PostgreSQL
+    # FIX 1: Install psycopg2 for Ansible PostgreSQL modules
+    - name: Install psycopg2 Python library
+      apt:
+        name: python3-psycopg2
+        state: present
+      tags: postgresql
+    
+    # FIX 2: Check if PostgreSQL service exists and start it properly
+    - name: Check PostgreSQL service status
+      shell: |
+        if systemctl is-active --quiet postgresql; then
+          echo "running"
+        else
+          echo "not-running"
+        fi
+      register: postgresql_status
+      changed_when: false
+      tags: postgresql
+    
+    - name: Start and enable PostgreSQL service
       systemd:
         name: postgresql
         state: started
         enabled: yes
+      when: postgresql_status.stdout == "not-running"
       tags: postgresql
     
     - name: Configure PostgreSQL database
       become_user: postgres
-      postgresql_db:
+      community.postgresql.postgresql_db:
         name: "{{ sonar_db_name }}"
         owner: "{{ sonar_db_user }}"
       tags: postgresql
     
     - name: Configure PostgreSQL user
       become_user: postgres
-      postgresql_user:
+      community.postgresql.postgresql_user:
         name: "{{ sonar_db_user }}"
         password: "{{ sonar_db_password }}"
         role_attr_flags: "SUPERUSER,CREATEDB"
