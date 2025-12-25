@@ -14,10 +14,18 @@
     name:
       - wget
       - unzip
-      - openjdk-11-jdk
-      - openjdk-11-jre
+      - openjdk-17-jdk
+      - openjdk-17-jre
     state: present
     update_cache: yes
+  tags: sonarqube
+  
+- name: Set Java 17 as default for SonarQube
+  lineinfile:
+    path: "{{ sonar_install_dir }}/conf/wrapper.conf"
+    regexp: '^wrapper\.java\.command='
+    line: 'wrapper.java.command=/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
+    backrefs: yes
   tags: sonarqube
 
 - name: Configure kernel parameters
