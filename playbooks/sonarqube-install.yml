@@ -1,6 +1,6 @@
 ---
 - name: Install SonarQube with PostgreSQL
-  hosts: sonarqube_servers
+  hosts: sonarqube
   become: yes
   
   pre_tasks:
