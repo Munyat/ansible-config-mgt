@@ -1,9 +1,16 @@
----
 - name: Install SonarQube with PostgreSQL
   hosts: sonarqube
   become: yes
   
   pre_tasks:
+    # FIRST: Update apt cache before installing anything
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags: always
+    
+    # NOW install PostgreSQL (without specific version)
     - name: Install PostgreSQL
       apt:
         name:
