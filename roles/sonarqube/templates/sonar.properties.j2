@@ -1,0 +1,20 @@
+# SonarQube Configuration
+sonar.jdbc.username=sonar
+sonar.jdbc.password={{ sonar_db_password }}
+sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube
+
+# Web Server
+sonar.web.host=0.0.0.0
+sonar.web.port=9000
+sonar.web.context=/sonarqube
+
+# Elasticsearch
+sonar.search.port=9001
+sonar.search.host=localhost
+sonar.search.javaOpts=-Xmx512m -Xms512m
+
+# Security
+sonar.forceAuthentication=false
+
+# Update Center
+sonar.updatecenter.activate=true

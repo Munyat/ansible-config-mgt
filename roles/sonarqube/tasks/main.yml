@@ -1,0 +1,89 @@
+---
+# SonarQube installation tasks
+
+- name: Include OS-specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: sonarqube
+
+- name: Install dependencies
+  apt:
+    name:
+      - wget
+      - unzip
+      - openjdk-11-jdk
+      - openjdk-11-jre
+    state: present
+    update_cache: yes
+  tags: sonarqube
+
+- name: Configure kernel parameters
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  loop:
+    - { name: 'vm.max_map_count', value: '262144' }
+    - { name: 'fs.file-max', value: '65536' }
+  tags: sonarqube
+
+- name: Configure limits
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "sonarqube   -   nofile   65536"
+    - "sonarqube   -   nproc    4096"
+  tags: sonarqube
+
+- name: Create sonarqube user
+  user:
+    name: sonarqube
+    system: yes
+    shell: /bin/bash
+  tags: sonarqube
+
+- name: Download SonarQube
+  get_url:
+    url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonar_version }}.zip"
+    dest: "/tmp/sonarqube-{{ sonar_version }}.zip"
+  tags: sonarqube
+
+- name: Extract SonarQube
+  unarchive:
+    src: "/tmp/sonarqube-{{ sonar_version }}.zip"
+    dest: /opt
+    remote_src: yes
+    owner: sonarqube
+    group: sonarqube
+  tags: sonarqube
+
+- name: Configure SonarQube properties
+  template:
+    src: sonar.properties.j2
+    dest: "{{ sonar_install_dir }}/conf/sonar.properties"
+    owner: sonarqube
+    group: sonarqube
+  notify: restart sonarqube
+  tags: sonarqube
+
+- name: Configure systemd service
+  template:
+    src: sonarqube.service.j2
+    dest: /etc/systemd/system/sonarqube.service
+  notify: restart sonarqube
+  tags: sonarqube
+
+- name: Start SonarQube service
+  systemd:
+    name: sonarqube
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  tags: sonarqube
