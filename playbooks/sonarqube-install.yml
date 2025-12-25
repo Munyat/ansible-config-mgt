@@ -8,6 +8,14 @@
     sonar_db_name: sonarqube
     sonar_db_user: sonar
     sonar_db_password: "YourSecurePassword123!"
+    # ADD THESE FOR SONARQUBE ROLE
+    sonar_version: "10.5.1.95771"
+    sonar_install_dir: "/opt/sonarqube-{{ sonar_version }}"
+    
+    # Optional: JDBC configuration
+    sonar_jdbc_url: "jdbc:postgresql://localhost:5432/{{ sonar_db_name }}"
+    sonar_jdbc_username: "{{ sonar_db_user }}"
+    sonar_jdbc_password: "{{ sonar_db_password }}"
   
   pre_tasks:
     - name: Update apt cache
